@@ -1,6 +1,24 @@
 const User = require('../models/User');
 const { generateToken, generateRefreshToken, generateUniqueId } = require('../utils/helpers');
 const logger = require('../utils/logger');
+const https = require('https');
+
+function verifyAccessToken(accessToken) {
+  return new Promise((resolve, reject) => {
+    https.get(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${encodeURIComponent(accessToken)}`, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try { resolve(JSON.parse(data)); }
+          catch (e) { reject(new Error('Failed to parse token info')); }
+        } else {
+          reject(new Error('Invalid access token'));
+        }
+      });
+    }).on('error', reject);
+  });
+}
 
 exports.socialLogin = async (req, res) => {
   try {
@@ -10,26 +28,36 @@ exports.socialLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Only Google sign-in is supported' });
     }
 
-    const { admin } = require('../config/firebase');
-    let firebaseUser;
+    let googleUser;
 
     try {
-      firebaseUser = await admin.auth().verifyIdToken(socialToken);
+      const { admin } = require('../config/firebase');
+      googleUser = await admin.auth().verifyIdToken(socialToken);
     } catch {
-      return res.status(400).json({ success: false, message: 'Invalid Google token' });
+      try {
+        const tokenInfo = await verifyAccessToken(socialToken);
+        googleUser = {
+          uid: tokenInfo.user_id,
+          email: tokenInfo.email,
+          name: tokenInfo.name || '',
+          picture: tokenInfo.picture || '',
+        };
+      } catch {
+        return res.status(400).json({ success: false, message: 'Invalid Google token' });
+      }
     }
 
-    let user = await User.findOne({ googleId: firebaseUser.uid });
-    if (!user && firebaseUser.email) {
-      user = await User.findOne({ email: firebaseUser.email });
+    let user = await User.findOne({ googleId: googleUser.uid });
+    if (!user && googleUser.email) {
+      user = await User.findOne({ email: googleUser.email });
     }
 
     if (!user) {
       user = await User.create({
-        googleId: firebaseUser.uid,
-        email: firebaseUser.email,
-        displayName: firebaseUser.name || `User${generateUniqueId()}`,
-        avatar: firebaseUser.picture || '',
+        googleId: googleUser.uid,
+        email: googleUser.email,
+        displayName: googleUser.name || `User${generateUniqueId()}`,
+        avatar: googleUser.picture || '',
         uid: generateUniqueId(),
         joinMethod: 'google',
         devices: deviceInfo ? [{
