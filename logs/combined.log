@@ -1,0 +1,12 @@
+2026-06-26 02:52:28 [INFO] Firebase initialized successfully
+2026-06-26 02:52:28 [INFO] Lovers Server running on port 5000
+2026-06-26 02:52:33 [ERROR] MongoDB Connection Error: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+2026-06-26 02:54:32 [INFO] Firebase initialized successfully
+2026-06-26 02:54:32 [INFO] Lovers Server running on port 5000
+2026-06-26 02:54:36 [ERROR] MongoDB Connection Error: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+2026-06-26 03:33:16 [INFO] Firebase initialized successfully
+2026-06-26 03:33:16 [INFO] Lovers Server running on port 5000
+2026-06-26 03:33:16 [INFO] MongoDB Connected: localhost
+2026-06-26 03:34:00 [INFO] Firebase initialized successfully
+2026-06-26 03:34:00 [INFO] Lovers Server running on port 5000
+2026-06-26 03:34:00 [INFO] MongoDB Connected: localhost
