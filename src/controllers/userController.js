@@ -201,10 +201,12 @@ exports.uploadAvatar = async (req, res) => {
     }
     const baseUrl = `https://${req.get('host')}`;
     const avatarUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    console.log('Avatar uploaded:', avatarUrl, 'file:', req.file.path);
     req.user.avatar = avatarUrl;
     await req.user.save();
     res.json({ success: true, user: req.user });
   } catch (error) {
+    console.error('Avatar upload error:', error);
     res.status(500).json({ success: false, message: 'Failed to upload avatar' });
   }
 };
