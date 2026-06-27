@@ -8,6 +8,8 @@ const { initializeFirebase } = require('./src/config/firebase');
 const logger = require('./src/utils/logger');
 
 const app = express();
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));

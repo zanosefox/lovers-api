@@ -180,3 +180,17 @@ exports.setUserType = async (req, res) => {
     res.status(500).json({ success: false, message: 'فشل في إعداد الحساب' });
   }
 };
+
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    req.user.avatar = avatarUrl;
+    await req.user.save();
+    res.json({ success: true, user: req.user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to upload avatar' });
+  }
+};
