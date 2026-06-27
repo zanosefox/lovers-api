@@ -180,16 +180,17 @@ exports.setUserType = async (req, res) => {
       req.user.username = req.body.username.toLowerCase().trim();
       req.user.displayName = req.body.username.trim();
     }
-    if (req.body.age) req.user.age = req.body.age;
+    if (req.body.age) req.user.age = Number(req.body.age);
     if (req.body.gender) req.user.gender = req.body.gender;
     req.user.userType = userType;
+    req.user.markModified('userType');
     await req.user.save();
     res.json({ success: true, user: req.user });
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم بالفعل' });
     }
-    res.status(500).json({ success: false, message: 'فشل في إعداد الحساب' });
+    res.status(500).json({ success: false, message: error.message || 'فشل في إعداد الحساب' });
   }
 };
 
