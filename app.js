@@ -38,6 +38,10 @@ app.use('/api/tasks', require('./src/routes/task'));
 app.use('/api/notifications', require('./src/routes/notification'));
 app.use('/api/config', require('./src/routes/config'));
 
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ success: false, message: 'Route not found' });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Lovers API is running', timestamp: new Date() });
 });
