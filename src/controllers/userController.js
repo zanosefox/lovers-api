@@ -161,6 +161,9 @@ exports.setUserType = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User type already set' });
     }
     req.user.userType = userType;
+    if (req.body.username) req.user.username = req.body.username;
+    if (req.body.age) req.user.age = req.body.age;
+    if (req.body.gender) req.user.gender = req.body.gender;
     await req.user.save();
     res.json({ success: true, user: req.user });
   } catch (error) {
