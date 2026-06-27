@@ -4,12 +4,18 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const fs = require('fs');
+const path = require('path');
 const { initializeFirebase } = require('./src/config/firebase');
 const logger = require('./src/utils/logger');
 
 const app = express();
-const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
 
 app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));
