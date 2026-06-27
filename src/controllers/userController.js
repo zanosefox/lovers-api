@@ -30,6 +30,21 @@ exports.updateProfile = async (req, res) => {
       updates.displayName = req.body.displayName || req.body.username.trim();
     }
 
+    if (req.body.base64Avatar) {
+      const matches = req.body.base64Avatar.match(/^data:image\/(jpeg|jpg|png|gif|webp);base64,(.+)$/);
+      if (matches) {
+        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        const data = Buffer.from(matches[2], 'base64');
+        const { v4: uuidv4 } = require('uuid');
+        const filename = `${uuidv4()}.${ext}`;
+        const fs = require('fs');
+        const uploadsDir = require('path').join(__dirname, '../../uploads');
+        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+        fs.writeFileSync(require('path').join(uploadsDir, filename), data);
+        updates.avatar = `https://${req.get('host')}/uploads/${filename}`;
+      }
+    }
+
     const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true })
       .select('-password -refreshToken -devices');
 
@@ -182,8 +197,21 @@ exports.setUserType = async (req, res) => {
     }
     if (req.body.age) req.user.age = Number(req.body.age);
     if (req.body.gender) req.user.gender = req.body.gender;
+    if (req.body.base64Avatar) {
+      const matches = req.body.base64Avatar.match(/^data:image\/(jpeg|jpg|png|gif|webp);base64,(.+)$/);
+      if (matches) {
+        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        const data = Buffer.from(matches[2], 'base64');
+        const { v4: uuidv4 } = require('uuid');
+        const filename = `${uuidv4()}.${ext}`;
+        const fs = require('fs');
+        const uploadsDir = require('path').join(__dirname, '../../uploads');
+        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+        fs.writeFileSync(require('path').join(uploadsDir, filename), data);
+        req.user.avatar = `https://${req.get('host')}/uploads/${filename}`;
+      }
+    }
     req.user.userType = userType;
-    req.user.markModified('userType');
     await req.user.save();
     res.json({ success: true, user: req.user });
   } catch (error) {
