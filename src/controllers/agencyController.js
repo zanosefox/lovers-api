@@ -82,6 +82,7 @@ exports.inviteHost = async (req, res) => {
     if (!agency || agency.owner.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not your agency' });
     }
+    if (!agency.isActive) return res.status(403).json({ success: false, message: 'Agency is not active yet' });
 
     const host = await User.findById(req.body.userId);
     if (!host || host.userType !== 'host') {
@@ -131,6 +132,7 @@ exports.respondToInvitation = async (req, res) => {
     if (response === 'accepted') {
       const agency = await Agency.findById(invitation.agency);
       if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
+      if (!agency.isActive) return res.status(403).json({ success: false, message: 'Agency is not active yet' });
       agency.members.push({ user: req.user._id, role: 'member' });
       agency.memberCount = agency.members.length;
       await agency.save();
@@ -152,6 +154,7 @@ exports.leaveAgency = async (req, res) => {
   try {
     const agency = await Agency.findById(req.params.id);
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
+    if (!agency.isActive) return res.status(403).json({ success: false, message: 'Agency is not active yet' });
     if (agency.owner.toString() === req.user._id.toString()) {
       agency.members = agency.members.filter(m => m.user.toString() !== req.user._id.toString());
       agency.memberCount = agency.members.length;
@@ -163,6 +166,66 @@ exports.leaveAgency = async (req, res) => {
     return res.status(403).json({ success: false, message: 'Only the Agent Host can remove you from the agency' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to leave agency' });
+  }
+};
+
+exports.activateAgency = async (req, res) => {
+  try {
+    const canActivate = req.user.role === 'server_owner' || req.user.role === 'super_admin' ||
+      (req.user.role === 'admin' && req.user.permissions?.manageAgencies);
+    if (!canActivate) {
+      return res.status(403).json({ success: false, message: 'Only Server Owner or Super Admin can activate agencies' });
+    }
+
+    const agency = await Agency.findById(req.params.id);
+    if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
+    if (agency.isActive) return res.status(400).json({ success: false, message: 'Agency is already active' });
+
+    agency.isActive = true;
+    await agency.save();
+
+    res.json({ success: true, agency });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to activate agency' });
+  }
+};
+
+exports.getPendingAgencies = async (req, res) => {
+  try {
+    const canView = req.user.role === 'server_owner' || req.user.role === 'super_admin' ||
+      (req.user.role === 'admin' && req.user.permissions?.manageAgencies);
+    if (!canView) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const agencies = await Agency.find({ isActive: false })
+      .populate('owner', 'displayName uid avatar');
+
+    res.json({ success: true, agencies });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to get pending agencies' });
+  }
+};
+
+exports.setManageAgenciesPermission = async (req, res) => {
+  try {
+    if (req.user.role !== 'server_owner') {
+      return res.status(403).json({ success: false, message: 'Only Server Owner can manage permissions' });
+    }
+
+    const { userId, canManage } = req.body;
+    const target = await User.findById(userId);
+    if (!target || (target.role !== 'admin' && target.role !== 'super_admin')) {
+      return res.status(400).json({ success: false, message: 'User must be Admin or Super Admin' });
+    }
+
+    if (!target.permissions) target.permissions = {};
+    target.permissions.manageAgencies = !!canManage;
+    await target.save();
+
+    res.json({ success: true, user: target });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to set permission' });
   }
 };
 

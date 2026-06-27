@@ -19,7 +19,7 @@ const agencySchema = new mongoose.Schema({
   level: { type: Number, default: 1 },
   xp: { type: Number, default: 0 },
   memberCount: { type: Number, default: 1 },
-  isActive: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: false },
   monthlyReports: [{
     month: { type: String },
     year: { type: Number },

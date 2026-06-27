@@ -199,7 +199,8 @@ exports.uploadAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-    const avatarUrl = `/uploads/${req.file.filename}`;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const avatarUrl = `${baseUrl}/uploads/${req.file.filename}`;
     req.user.avatar = avatarUrl;
     await req.user.save();
     res.json({ success: true, user: req.user });

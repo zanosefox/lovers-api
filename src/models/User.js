@@ -58,6 +58,9 @@ const userSchema = new mongoose.Schema({
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   role: { type: String, enum: ['user', 'moderator', 'bd', 'admin', 'super_admin', 'server_owner'], default: 'user' },
   userType: { type: String, enum: ['host', 'supporter', 'agent_host'] },
+  permissions: {
+    manageAgencies: { type: Boolean, default: false },
+  },
   settings: {
     pushNotifications: { type: Boolean, default: true },
     messagePrivacy: { type: String, enum: ['everyone', 'friends', 'nobody'], default: 'everyone' },
