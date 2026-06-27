@@ -9,7 +9,7 @@ router.get('/dashboard', protect, adminAuth('admin', 'super_admin', 'server_owne
 router.get('/users', protect, adminAuth('admin', 'super_admin', 'server_owner'), adminController.getUsers);
 router.put('/users/:id/ban', protect, adminAuth('admin', 'super_admin', 'server_owner'), adminController.banUser);
 router.put('/users/:id/verify', protect, adminAuth('admin', 'super_admin', 'server_owner'), adminController.verifyUser);
-router.put('/users/:id/role', protect, serverOwnerOnly, adminController.updateUserRole);
+router.put('/users/:id/role', protect, superAdminOnly, adminController.updateUserRole);
 router.post('/users/:id/add-coins', protect, adminAuth('admin', 'super_admin', 'server_owner'), adminController.addCoins);
 
 router.get('/rooms', protect, adminAuth('admin', 'super_admin', 'server_owner', 'moderator'), adminController.getRooms);

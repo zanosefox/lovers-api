@@ -273,9 +273,15 @@ exports.deletePost = async (req, res) => {
 exports.updateUserRole = async (req, res) => {
   try {
     const { role } = req.body;
-    const validRoles = ['user', 'moderator', 'admin', 'super_admin'];
+    const validRoles = ['user', 'moderator', 'admin', 'super_admin', 'server_owner'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid role' });
+    }
+    if (role === 'server_owner' && req.user.role !== 'server_owner') {
+      const existingOwner = await User.findOne({ role: 'server_owner' });
+      if (existingOwner) {
+        return res.status(403).json({ success: false, message: 'Server owner already exists' });
+      }
     }
 
     const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
