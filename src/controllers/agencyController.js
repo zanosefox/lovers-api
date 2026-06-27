@@ -1,16 +1,19 @@
 const Agency = require('../models/Agency');
 const User = require('../models/User');
+const Invitation = require('../models/Invitation');
 const { paginate } = require('../utils/helpers');
-const logger = require('../utils/logger');
 
 exports.createAgency = async (req, res) => {
   try {
-    const { name, description } = req.body;
-    const existing = await Agency.findOne({ name });
-    if (existing) return res.status(400).json({ success: false, message: 'Agency name already exists' });
+    if (req.user.userType !== 'agent_host') {
+      return res.status(403).json({ success: false, message: 'Only Agent Host can create an agency' });
+    }
+    const existing = await Agency.findOne({ owner: req.user._id });
+    if (existing) return res.status(400).json({ success: false, message: 'You already have an agency' });
 
+    const { name, description } = req.body;
     const agency = await Agency.create({
-      name,
+      name: name || `${req.user.displayName}'s Agency`,
       description,
       owner: req.user._id,
       members: [{ user: req.user._id, role: 'owner' }],
@@ -19,6 +22,20 @@ exports.createAgency = async (req, res) => {
     res.status(201).json({ success: true, agency });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to create agency' });
+  }
+};
+
+exports.getMyAgency = async (req, res) => {
+  try {
+    const agency = await Agency.findOne({
+      $or: [{ owner: req.user._id }, { 'members.user': req.user._id }],
+    })
+      .populate('owner', 'displayName uid avatar level isVerified')
+      .populate('admins', 'displayName uid avatar')
+      .populate('members.user', 'displayName uid avatar level isVerified');
+    res.json({ success: true, agency });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to get agency' });
   }
 };
 
@@ -56,21 +73,78 @@ exports.getAgency = async (req, res) => {
   }
 };
 
-exports.joinAgency = async (req, res) => {
+exports.inviteHost = async (req, res) => {
   try {
+    if (req.user.userType !== 'agent_host') {
+      return res.status(403).json({ success: false, message: 'Only Agent Host can invite' });
+    }
     const agency = await Agency.findById(req.params.id);
-    if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
-    if (agency.members.some(m => m.user.toString() === req.user._id.toString())) {
+    if (!agency || agency.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not your agency' });
+    }
+
+    const host = await User.findById(req.body.userId);
+    if (!host || host.userType !== 'host') {
+      return res.status(400).json({ success: false, message: 'User must be a Host' });
+    }
+    if (agency.members.some(m => m.user.toString() === host._id.toString())) {
       return res.status(400).json({ success: false, message: 'Already a member' });
     }
 
-    agency.members.push({ user: req.user._id, role: 'member' });
-    agency.memberCount = agency.members.length;
-    await agency.save();
+    const existing = await Invitation.findOne({ agency: agency._id, to: host._id, status: 'pending' });
+    if (existing) return res.status(400).json({ success: false, message: 'Invitation already sent' });
 
-    res.json({ success: true, message: 'Joined agency', agency });
+    const invitation = await Invitation.create({
+      agency: agency._id,
+      from: req.user._id,
+      to: host._id,
+    });
+
+    res.json({ success: true, invitation });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to join agency' });
+    res.status(500).json({ success: false, message: 'Failed to send invitation' });
+  }
+};
+
+exports.getInvitations = async (req, res) => {
+  try {
+    const invitations = await Invitation.find({ to: req.user._id, status: 'pending' })
+      .populate('agency', 'name')
+      .populate('from', 'displayName uid avatar');
+    res.json({ success: true, invitations });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to get invitations' });
+  }
+};
+
+exports.respondToInvitation = async (req, res) => {
+  try {
+    const invitation = await Invitation.findById(req.params.id);
+    if (!invitation || invitation.to.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not your invitation' });
+    }
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Invitation already responded' });
+    }
+
+    const { response } = req.body;
+    if (response === 'accepted') {
+      const agency = await Agency.findById(invitation.agency);
+      if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
+      agency.members.push({ user: req.user._id, role: 'member' });
+      agency.memberCount = agency.members.length;
+      await agency.save();
+      invitation.status = 'accepted';
+    } else if (response === 'rejected') {
+      invitation.status = 'rejected';
+    } else {
+      return res.status(400).json({ success: false, message: 'Response must be accepted or rejected' });
+    }
+
+    await invitation.save();
+    res.json({ success: true, invitation });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to respond to invitation' });
   }
 };
 
@@ -79,14 +153,14 @@ exports.leaveAgency = async (req, res) => {
     const agency = await Agency.findById(req.params.id);
     if (!agency) return res.status(404).json({ success: false, message: 'Agency not found' });
     if (agency.owner.toString() === req.user._id.toString()) {
-      return res.status(400).json({ success: false, message: 'Owner cannot leave. Transfer ownership first.' });
+      agency.members = agency.members.filter(m => m.user.toString() !== req.user._id.toString());
+      agency.memberCount = agency.members.length;
+      agency.isActive = false;
+      await agency.save();
+      return res.json({ success: true, message: 'Agency closed' });
     }
 
-    agency.members = agency.members.filter(m => m.user.toString() !== req.user._id.toString());
-    agency.memberCount = agency.members.length;
-    await agency.save();
-
-    res.json({ success: true, message: 'Left agency' });
+    return res.status(403).json({ success: false, message: 'Only the Agent Host can remove you from the agency' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to leave agency' });
   }

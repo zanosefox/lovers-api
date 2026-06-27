@@ -5,10 +5,13 @@ const agencyController = require('../controllers/agencyController');
 
 router.get('/', protect, agencyController.getAgencies);
 router.post('/', protect, agencyController.createAgency);
+router.get('/my', protect, agencyController.getMyAgency);
+router.get('/invitations', protect, agencyController.getInvitations);
 router.get('/:id', protect, agencyController.getAgency);
-router.post('/:id/join', protect, agencyController.joinAgency);
+router.post('/:id/invite', protect, agencyController.inviteHost);
 router.post('/:id/leave', protect, agencyController.leaveAgency);
 router.post('/:id/admins', protect, agencyController.addAdmin);
 router.delete('/:id/members/:userId', protect, agencyController.removeMember);
+router.post('/invitations/:id/respond', protect, agencyController.respondToInvitation);
 
 module.exports = router;
