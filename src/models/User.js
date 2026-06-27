@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema({
   frame: { type: String, default: '' },
   vehicle: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' },
   vehicleExpiry: { type: Date },
-  joinMethod: { type: String, enum: ['google'], required: true },
+  joinMethod: { type: String, enum: ['google', 'phone'], required: true },
   googleId: { type: String, sparse: true },
   isOnline: { type: Boolean, default: false },
   lastSeen: { type: Date },
@@ -57,6 +57,7 @@ const userSchema = new mongoose.Schema({
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   role: { type: String, enum: ['user', 'moderator', 'bd', 'admin', 'super_admin', 'server_owner'], default: 'user' },
+  userType: { type: String, enum: ['host', 'supporter'] },
   settings: {
     pushNotifications: { type: Boolean, default: true },
     messagePrivacy: { type: String, enum: ['everyone', 'friends', 'nobody'], default: 'everyone' },
