@@ -34,6 +34,7 @@ app.use('/api/wallet', require('./src/routes/wallet'));
 app.use('/api/admin', require('./src/routes/admin'));
 app.use('/api/tasks', require('./src/routes/task'));
 app.use('/api/notifications', require('./src/routes/notification'));
+app.use('/api/config', require('./src/routes/config'));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Lovers API is running', timestamp: new Date() });

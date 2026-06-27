@@ -286,3 +286,28 @@ exports.updateUserRole = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to update role' });
   }
 };
+
+exports.addCoins = async (req, res) => {
+  try {
+    const { coins, diamonds } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    if (coins) user.coins += coins;
+    if (diamonds) user.diamonds += diamonds;
+    await user.save();
+
+    await Transaction.create({
+      user: user._id,
+      type: 'recharge',
+      amount: diamonds || coins || 0,
+      currency: diamonds ? 'diamond' : 'coin',
+      status: 'completed',
+      description: `Manual add by admin (${req.user?.username || 'admin'})`,
+    });
+
+    res.json({ success: true, coins: user.coins, diamonds: user.diamonds });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to add coins' });
+  }
+};

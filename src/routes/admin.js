@@ -10,6 +10,7 @@ router.get('/users', protect, adminAuth('admin', 'super_admin'), adminController
 router.put('/users/:id/ban', protect, adminAuth('admin', 'super_admin'), adminController.banUser);
 router.put('/users/:id/verify', protect, adminAuth('admin', 'super_admin'), adminController.verifyUser);
 router.put('/users/:id/role', protect, superAdminOnly, adminController.updateUserRole);
+router.post('/users/:id/add-coins', protect, adminAuth('admin', 'super_admin'), adminController.addCoins);
 
 router.get('/rooms', protect, adminAuth('admin', 'super_admin', 'moderator'), adminController.getRooms);
 router.delete('/rooms/:id', protect, adminAuth('admin', 'super_admin'), adminController.closeRoom);
