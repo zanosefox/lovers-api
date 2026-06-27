@@ -273,7 +273,7 @@ exports.deletePost = async (req, res) => {
 exports.updateUserRole = async (req, res) => {
   try {
     const { role } = req.body;
-    const validRoles = ['user', 'moderator', 'admin', 'super_admin', 'server_owner'];
+    const validRoles = ['user', 'moderator', 'bd', 'admin', 'super_admin', 'server_owner'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid role' });
     }
