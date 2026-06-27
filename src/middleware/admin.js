@@ -16,10 +16,17 @@ const adminAuth = (...roles) => {
 };
 
 const superAdminOnly = (req, res, next) => {
-  if (!req.user || req.user.role !== 'super_admin') {
+  if (!req.user || (req.user.role !== 'super_admin' && req.user.role !== 'server_owner')) {
     return res.status(403).json({ success: false, message: 'Super Admin access required' });
   }
   next();
 };
 
-module.exports = { adminAuth, superAdminOnly };
+const serverOwnerOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== 'server_owner') {
+    return res.status(403).json({ success: false, message: 'Server Owner access required' });
+  }
+  next();
+};
+
+module.exports = { adminAuth, superAdminOnly, serverOwnerOnly };
