@@ -53,12 +53,13 @@ exports.socialLogin = async (req, res) => {
     }
 
     if (!user) {
+      const newUid = await generateUniqueId();
       user = await User.create({
         googleId: googleUser.uid,
         email: googleUser.email,
-        displayName: googleUser.name || `User${generateUniqueId()}`,
+        displayName: googleUser.name || `User${newUid}`,
         avatar: googleUser.picture || '',
-        uid: generateUniqueId(),
+        uid: newUid,
         joinMethod: 'google',
         devices: deviceInfo ? [{
           deviceId: deviceInfo.deviceId,
@@ -67,6 +68,10 @@ exports.socialLogin = async (req, res) => {
           lastLogin: new Date(),
         }] : [],
       });
+    } else {
+      if (!user.uid || !/^\d+$/.test(user.uid)) {
+        user.uid = await generateUniqueId();
+      }
     }
 
     const token = generateToken(user._id);
