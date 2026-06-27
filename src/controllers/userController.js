@@ -15,17 +15,29 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const allowed = ['displayName', 'bio', 'gender', 'age', 'country', 'language', 'avatar', 'coverImage'];
+    const allowed = ['displayName', 'username', 'bio', 'gender', 'age', 'country', 'language', 'avatar', 'coverImage'];
     const updates = {};
     allowed.forEach(field => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
+
+    if (req.body.username) {
+      const existing = await User.findOne({ username: req.body.username.toLowerCase().trim(), _id: { $ne: req.user._id } });
+      if (existing) {
+        return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم بالفعل' });
+      }
+      updates.username = req.body.username.toLowerCase().trim();
+      updates.displayName = req.body.displayName || req.body.username.trim();
+    }
 
     const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true })
       .select('-password -refreshToken -devices');
 
     res.json({ success: true, user });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم بالفعل' });
+    }
     res.status(500).json({ success: false, message: 'Failed to update profile' });
   }
 };
