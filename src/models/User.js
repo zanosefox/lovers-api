@@ -74,8 +74,8 @@ userSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password, 12);
   }
   if (!this.uid) {
-    const { v4: uuidv4 } = require('uuid');
-    this.uid = `LV${uuidv4().replace(/-/g, '').substring(0, 8).toUpperCase()}`;
+    const { generateUniqueId } = require('../utils/helpers');
+    this.uid = await generateUniqueId();
   }
   next();
 });

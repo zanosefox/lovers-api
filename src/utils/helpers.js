@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const Counter = require('../models/Counter');
 
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -11,9 +12,13 @@ const generateRefreshToken = () => {
   return uuidv4();
 };
 
-const generateUniqueId = () => {
-  const id = uuidv4().replace(/-/g, '').substring(0, 8);
-  return `LV${id.toUpperCase()}`;
+const generateUniqueId = async () => {
+  const counter = await Counter.findOneAndUpdate(
+    { name: 'userId' },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+  return counter.seq.toString();
 };
 
 const generateOTP = () => {
