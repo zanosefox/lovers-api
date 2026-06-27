@@ -160,13 +160,23 @@ exports.setUserType = async (req, res) => {
     if (req.user.userType) {
       return res.status(400).json({ success: false, message: 'User type already set' });
     }
-    req.user.userType = userType;
-    if (req.body.username) req.user.username = req.body.username;
+    if (req.body.username) {
+      const existing = await User.findOne({ username: req.body.username.toLowerCase().trim(), _id: { $ne: req.user._id } });
+      if (existing) {
+        return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم بالفعل' });
+      }
+      req.user.username = req.body.username.toLowerCase().trim();
+      req.user.displayName = req.body.username.trim();
+    }
     if (req.body.age) req.user.age = req.body.age;
     if (req.body.gender) req.user.gender = req.body.gender;
+    req.user.userType = userType;
     await req.user.save();
     res.json({ success: true, user: req.user });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to set user type' });
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم بالفعل' });
+    }
+    res.status(500).json({ success: false, message: 'فشل في إعداد الحساب' });
   }
 };
