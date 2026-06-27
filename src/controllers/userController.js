@@ -150,3 +150,20 @@ exports.removeDevice = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to remove device' });
   }
 };
+
+exports.setUserType = async (req, res) => {
+  try {
+    const { userType } = req.body;
+    if (!['host', 'supporter'].includes(userType)) {
+      return res.status(400).json({ success: false, message: 'userType must be host or supporter' });
+    }
+    if (req.user.userType) {
+      return res.status(400).json({ success: false, message: 'User type already set' });
+    }
+    req.user.userType = userType;
+    await req.user.save();
+    res.json({ success: true, user: req.user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to set user type' });
+  }
+};

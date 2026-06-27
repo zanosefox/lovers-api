@@ -13,5 +13,6 @@ router.post('/:id/block', protect, userController.blockUser);
 router.get('/profile', protect, userController.getProfile);
 router.get('/:id', protect, userController.getProfile);
 router.put('/profile', protect, userController.updateProfile);
+router.put('/user-type', protect, userController.setUserType);
 
 module.exports = router;
