@@ -166,8 +166,8 @@ exports.removeDevice = async (req, res) => {
 exports.setUserType = async (req, res) => {
   try {
     const { userType } = req.body;
-    if (!['host', 'supporter'].includes(userType)) {
-      return res.status(400).json({ success: false, message: 'userType must be host or supporter' });
+    if (!['host', 'supporter', 'agent_host'].includes(userType)) {
+      return res.status(400).json({ success: false, message: 'userType must be host, supporter, or agent_host' });
     }
     if (req.user.userType) {
       return res.status(400).json({ success: false, message: 'User type already set' });

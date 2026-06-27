@@ -57,7 +57,7 @@ const userSchema = new mongoose.Schema({
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   role: { type: String, enum: ['user', 'moderator', 'bd', 'admin', 'super_admin', 'server_owner'], default: 'user' },
-  userType: { type: String, enum: ['host', 'supporter'] },
+  userType: { type: String, enum: ['host', 'supporter', 'agent_host'] },
   settings: {
     pushNotifications: { type: Boolean, default: true },
     messagePrivacy: { type: String, enum: ['everyone', 'friends', 'nobody'], default: 'everyone' },
